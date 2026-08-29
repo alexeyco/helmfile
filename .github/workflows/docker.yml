@@ -53,3 +53,6 @@ jobs:
             ${{ env.IMAGE }}:${{ env.HELMFILE_VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Smoke test image
+        run: docker run --rm "${IMAGE}:latest" sh -c 'helmfile version && helm version && helm diff version && kubectl version --client && node --version'
