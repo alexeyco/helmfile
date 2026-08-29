@@ -7,12 +7,16 @@ FROM docker.io/library/node:${NODE_VERSION}-alpine AS node
 
 FROM alpine:{{.Alpine}} AS builder
 
-ARG TARGETARCH
 ARG KUBECTL_VERSION={{.Kubectl}}
 
 RUN apk add --no-cache curl \
  && mkdir -p /out \
- && curl -fsSLo /out/kubectl "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubectl" \
+ && case "$(uname -m)" in \
+      x86_64) KUBECTL_ARCH=amd64 ;; \
+      aarch64) KUBECTL_ARCH=arm64 ;; \
+      *) echo "unsupported architecture: $(uname -m)" >&2 && exit 1 ;; \
+    esac \
+ && curl -fsSLo /out/kubectl "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${KUBECTL_ARCH}/kubectl" \
  && chmod +x /out/kubectl
 
 FROM ghcr.io/helmfile/helmfile:v${HELMFILE_VERSION}
@@ -24,7 +28,9 @@ LABEL org.opencontainers.image.title="helmfile" \
       org.opencontainers.image.licenses="BSD-2-Clause"
 
 COPY --from=builder /out/kubectl /usr/local/bin/kubectl
-COPY --from=node /usr/local/bin/node /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+ && ln -sf ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 WORKDIR /tmp
