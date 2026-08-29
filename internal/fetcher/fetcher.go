@@ -1,6 +1,7 @@
 package fetcher
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -21,6 +22,7 @@ const (
 	helmfileURL = "https://api.github.com/repos/helmfile/helmfile/releases/latest"
 	helmDiffURL = "https://api.github.com/repos/databus23/helm-diff/releases/latest"
 	alpineURL   = "https://dl-cdn.alpinelinux.org/alpine/"
+	nodeURL     = "https://nodejs.org/dist/index.json"
 
 	githubAccept = "application/vnd.github+json"
 	userAgent    = "github.com/alexeyco/helmfile (image generator)"
@@ -57,6 +59,7 @@ func (f *Fetcher) Fetch(ctx context.Context) (internal.Versions, error) {
 		{name: "helmfile", url: helmfileURL, header: githubHeader, parse: parseTagName},
 		{name: "helm-diff", url: helmDiffURL, header: githubHeader, parse: parseTagName},
 		{name: "alpine", url: alpineURL, parse: parseAlpineIndex},
+		{name: "node", url: nodeURL, parse: parseNodeIndex},
 	}
 
 	results := make([]string, len(sources))
@@ -86,6 +89,7 @@ func (f *Fetcher) Fetch(ctx context.Context) (internal.Versions, error) {
 		Helmfile: results[2],
 		HelmDiff: results[3],
 		Alpine:   results[4],
+		Node:     results[5],
 	}, nil
 }
 
@@ -145,6 +149,31 @@ func parseTagName(body []byte) (string, error) {
 		return "", fmt.Errorf("parse tag_name: %w", err)
 	}
 	return v, nil
+}
+
+type nodeRelease struct {
+	Version string          `json:"version"`
+	LTS     json.RawMessage `json:"lts"`
+}
+
+func parseNodeIndex(body []byte) (string, error) {
+	var payload []nodeRelease
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return "", fmt.Errorf("decode JSON: %w", err)
+	}
+	if len(payload) == 0 {
+		return "", errors.New("no node releases found")
+	}
+	for _, e := range payload {
+		if string(bytes.TrimSpace(e.LTS)) == "false" {
+			v, err := validateVersion(e.Version)
+			if err != nil {
+				return "", fmt.Errorf("parse node version: %w", err)
+			}
+			return v, nil
+		}
+	}
+	return "", errors.New("no current node release found")
 }
 
 func parseAlpineIndex(body []byte) (string, error) {

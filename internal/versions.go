@@ -6,4 +6,5 @@ type Versions struct {
 	Helm     string
 	Helmfile string
 	HelmDiff string
+	Node     string
 }

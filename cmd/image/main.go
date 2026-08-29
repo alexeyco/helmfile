@@ -36,6 +36,7 @@ func run() error {
 	fmt.Printf("helm      %s\n", versions.Helm)
 	fmt.Printf("helmfile  %s\n", versions.Helmfile)
 	fmt.Printf("helm-diff %s\n", versions.HelmDiff)
+	fmt.Printf("node      %s\n", versions.Node)
 	fmt.Printf("alpine    %s\n", versions.Alpine)
 	fmt.Println("Dockerfile written")
 	return nil

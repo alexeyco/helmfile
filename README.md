@@ -8,6 +8,7 @@ Bundled tools:
 - helm
 - helmfile
 - helm diff
+- node (npm, npx, corepack included)
 
 ## Image
 
@@ -15,7 +16,7 @@ Published to GHCR as `ghcr.io/alexeyco/helmfile`:
 
 - Tags: `latest` and the bundled helmfile version (e.g. `1.7.4`)
 - Multi-arch: `linux/amd64` and `linux/arm64`
-- Distroless-based (no shell)
+- Alpine-based (shell available, so scripts work)
 - Rebuilt daily at 03:00 UTC via CI (also manually triggerable)
 
 ## Development
@@ -32,6 +33,7 @@ Requirements: Go 1.27+, golangci-lint v2+.
 | `make build`    | Build binary into `./build`                   |
 | `make run`      | Run the app                                   |
 | `make generate` | Generate Dockerfile with latest tool versions |
+| `make image`    | Generate Dockerfile and build the local image |
 | `make mock`     | Generate mocks (uber/mock)                    |
 
 ## License
