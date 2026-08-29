@@ -16,6 +16,7 @@ func testVersions() internal.Versions {
 		Helm:     "3.21.4",
 		Helmfile: "1.7.4",
 		HelmDiff: "3.15.11",
+		Node:     "26.8.1",
 	}
 }
 
@@ -36,7 +37,10 @@ func TestRender(t *testing.T) {
 		"helm-v${HELM_VERSION}-linux-${TARGETARCH}.tar.gz",
 		"helmfile_${HELMFILE_VERSION}_linux_${TARGETARCH}.tar.gz",
 		"helm-diff-linux-${TARGETARCH}.tgz",
-		"distroless/static-debian12",
+		"ARG NODE_VERSION=26.8.1",
+		"node:${NODE_VERSION}-alpine",
+		"COPY --from=node",
+		"apk add --no-cache libstdc++",
 		"HELM_DATA_HOME",
 	} {
 		if !strings.Contains(got, want) {

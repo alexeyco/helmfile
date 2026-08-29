@@ -32,11 +32,12 @@ func TestFetcherFetch(t *testing.T) {
 		"https://api.github.com/repos/helmfile/helmfile/releases/latest":   `{"tag_name": "v1.7.4"}`,
 		"https://api.github.com/repos/databus23/helm-diff/releases/latest": `{"tag_name": "v3.15.11"}`,
 		"https://dl-cdn.alpinelinux.org/alpine/":                           alpineIndexBody,
+		"https://nodejs.org/dist/index.json":                               `[{"version":"v26.8.1","lts":false}]`,
 	}
 
 	ctrl := gomock.NewController(t)
 	client := NewMockHTTPClient(ctrl)
-	client.EXPECT().Do(gomock.Any()).Times(5).DoAndReturn(
+	client.EXPECT().Do(gomock.Any()).Times(6).DoAndReturn(
 		func(req *http.Request) (*http.Response, error) {
 			body, ok := responses[req.URL.String()]
 			if !ok {
@@ -61,6 +62,7 @@ func TestFetcherFetch(t *testing.T) {
 		Helm:     "3.21.4",
 		Helmfile: "1.7.4",
 		HelmDiff: "3.15.11",
+		Node:     "26.8.1",
 	}
 	if got != want {
 		t.Fatalf("got %+v, want %+v", got, want)
@@ -70,7 +72,7 @@ func TestFetcherFetch(t *testing.T) {
 func TestFetcherFetchHTTPError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	client := NewMockHTTPClient(ctrl)
-	client.EXPECT().Do(gomock.Any()).Times(5).Return(nil, errors.New("boom"))
+	client.EXPECT().Do(gomock.Any()).Times(6).Return(nil, errors.New("boom"))
 
 	if _, err := fetcher.New(client).Fetch(context.Background()); err == nil {
 		t.Fatal("expected error")

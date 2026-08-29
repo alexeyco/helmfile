@@ -74,6 +74,42 @@ func TestParseTagName(t *testing.T) {
 	}
 }
 
+func TestParseNodeIndex(t *testing.T) {
+	tests := []struct {
+		name    string
+		body    string
+		want    string
+		wantErr bool
+	}{
+		{"with v prefix and lts false", `[{"version":"v26.8.1","lts":false}]`, "26.8.1", false},
+		{"skips lts entry and takes current line", `[{"version":"v24.20.0","lts":"Krypton"},{"version":"v26.8.1","lts":false}]`, "26.8.1", false},
+		{"all entries lts", `[{"version":"v24.20.0","lts":"Krypton"}]`, "", true},
+		{"without prefix", `[{"version":"26.8.1","lts":false}]`, "26.8.1", false},
+		{"empty array", `[]`, "", true},
+		{"invalid JSON", `[{"version": `, "", true},
+		{"empty body", "", "", true},
+		{"empty version", `[{"version":"","lts":false}]`, "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseNodeIndex([]byte(tt.body))
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected error, got %q", got)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tt.want {
+				t.Fatalf("got %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 const alpineIndexHTML = `<html>
 <head><title>Index of /alpine/</title></head>
 <body>

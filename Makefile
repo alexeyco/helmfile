@@ -37,6 +37,10 @@ run: ## Run the app
 generate: ## Generate Dockerfile with latest tool versions
 	go run $(CMD)
 
+.PHONY: image
+image: generate ## Generate the Dockerfile and build the image locally
+	docker build -t ghcr.io/alexeyco/helmfile:local .
+
 .PHONY: mock
 mock: ## Generate mocks (uber/mock)
 	go generate ./...
