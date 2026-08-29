@@ -1,7 +1,6 @@
 package fetcher
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -22,7 +21,7 @@ const (
 	helmfileURL = "https://api.github.com/repos/helmfile/helmfile/releases/latest"
 	helmDiffURL = "https://api.github.com/repos/databus23/helm-diff/releases/latest"
 	alpineURL   = "https://dl-cdn.alpinelinux.org/alpine/"
-	nodeURL     = "https://nodejs.org/dist/index.json"
+	nodeURL     = "https://hub.docker.com/v2/repositories/library/node/tags/?page_size=100"
 
 	githubAccept = "application/vnd.github+json"
 	userAgent    = "github.com/alexeyco/helmfile (image generator)"
@@ -34,6 +33,8 @@ var githubHeader = map[string]string{
 }
 
 var alpineReleaseRe = regexp.MustCompile(`v(3\.\d+)/`)
+
+var nodeTagRe = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)-alpine$`)
 
 var _ HTTPClient = (*http.Client)(nil)
 
@@ -59,7 +60,7 @@ func (f *Fetcher) Fetch(ctx context.Context) (internal.Versions, error) {
 		{name: "helmfile", url: helmfileURL, header: githubHeader, parse: parseTagName},
 		{name: "helm-diff", url: helmDiffURL, header: githubHeader, parse: parseTagName},
 		{name: "alpine", url: alpineURL, parse: parseAlpineIndex},
-		{name: "node", url: nodeURL, parse: parseNodeIndex},
+		{name: "node", url: nodeURL, parse: parseNodeTags},
 	}
 
 	results := make([]string, len(sources))
@@ -151,29 +152,53 @@ func parseTagName(body []byte) (string, error) {
 	return v, nil
 }
 
-type nodeRelease struct {
-	Version string          `json:"version"`
-	LTS     json.RawMessage `json:"lts"`
-}
-
-func parseNodeIndex(body []byte) (string, error) {
-	var payload []nodeRelease
+func parseNodeTags(body []byte) (string, error) {
+	var payload struct {
+		Results []struct {
+			Name   string `json:"name"`
+			Images []struct {
+				OS           string `json:"os"`
+				Architecture string `json:"architecture"`
+			} `json:"images"`
+		} `json:"results"`
+	}
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return "", fmt.Errorf("decode JSON: %w", err)
 	}
-	if len(payload) == 0 {
-		return "", errors.New("no node releases found")
-	}
-	for _, e := range payload {
-		if string(bytes.TrimSpace(e.LTS)) == "false" {
-			v, err := validateVersion(e.Version)
-			if err != nil {
-				return "", fmt.Errorf("parse node version: %w", err)
+	latest := ""
+	for _, tag := range payload.Results {
+		m := nodeTagRe.FindStringSubmatch(tag.Name)
+		if m == nil {
+			continue
+		}
+		amd64, arm64 := false, false
+		for _, img := range tag.Images {
+			if img.OS != "linux" {
+				continue
 			}
-			return v, nil
+			switch img.Architecture {
+			case "amd64":
+				amd64 = true
+			case "arm64":
+				arm64 = true
+			}
+		}
+		if !amd64 || !arm64 {
+			continue
+		}
+		v := m[1] + "." + m[2] + "." + m[3]
+		if compareVersion(v, latest) > 0 {
+			latest = v
 		}
 	}
-	return "", errors.New("no current node release found")
+	if latest == "" {
+		return "", errors.New("no multi-arch node tag found")
+	}
+	v, err := validateVersion(latest)
+	if err != nil {
+		return "", fmt.Errorf("parse node version: %w", err)
+	}
+	return v, nil
 }
 
 func parseAlpineIndex(body []byte) (string, error) {
@@ -196,6 +221,27 @@ func compareMinor(a, b string) int {
 	pa := strings.Split(a, ".")
 	pb := strings.Split(b, ".")
 	for i := range 2 {
+		var na, nb int
+		if i < len(pa) {
+			na, _ = strconv.Atoi(pa[i])
+		}
+		if i < len(pb) {
+			nb, _ = strconv.Atoi(pb[i])
+		}
+		if na != nb {
+			return na - nb
+		}
+	}
+	return 0
+}
+
+func compareVersion(a, b string) int {
+	if b == "" {
+		return 1
+	}
+	pa := strings.Split(a, ".")
+	pb := strings.Split(b, ".")
+	for i := range 3 {
 		var na, nb int
 		if i < len(pa) {
 			na, _ = strconv.Atoi(pa[i])

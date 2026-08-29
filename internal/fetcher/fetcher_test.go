@@ -27,14 +27,13 @@ const alpineIndexBody = `<html>
 
 func TestFetcherFetch(t *testing.T) {
 	responses := map[string]string{
-		"https://dl.k8s.io/release/stable.txt":                             "v1.36.4\n",
-		"https://api.github.com/repos/helm/helm/releases/latest":           `{"tag_name": "v3.21.4"}`,
-		"https://api.github.com/repos/helmfile/helmfile/releases/latest":   `{"tag_name": "v1.7.4"}`,
-		"https://api.github.com/repos/databus23/helm-diff/releases/latest": `{"tag_name": "v3.15.11"}`,
-		"https://dl-cdn.alpinelinux.org/alpine/":                           alpineIndexBody,
-		"https://nodejs.org/dist/index.json":                               `[{"version":"v26.8.1","lts":false}]`,
+		"https://dl.k8s.io/release/stable.txt":                                    "v1.36.4\n",
+		"https://api.github.com/repos/helm/helm/releases/latest":                  `{"tag_name": "v3.21.4"}`,
+		"https://api.github.com/repos/helmfile/helmfile/releases/latest":          `{"tag_name": "v1.7.4"}`,
+		"https://api.github.com/repos/databus23/helm-diff/releases/latest":        `{"tag_name": "v3.15.11"}`,
+		"https://dl-cdn.alpinelinux.org/alpine/":                                  alpineIndexBody,
+		"https://hub.docker.com/v2/repositories/library/node/tags/?page_size=100": `{"results":[{"name":"26.8.1-alpine","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]}]}`,
 	}
-
 	ctrl := gomock.NewController(t)
 	client := NewMockHTTPClient(ctrl)
 	client.EXPECT().Do(gomock.Any()).Times(6).DoAndReturn(

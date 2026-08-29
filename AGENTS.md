@@ -18,8 +18,9 @@ Docker image for Kubernetes deploys in CI/CD — see `README.md`.
 ## Image design decisions (not recorded elsewhere)
 
 - Final base image: `alpine:<version>` (same resolved version as the builder stage) — distroless/static was dropped because Node.js/npm need a shell and `libstdc++`
-- Node.js is delivered multi-stage from `docker.io/library/node:<version>-alpine` (musl binary); the final stage runs `apk add --no-cache libstdc++`. Node version = first entry of the nodejs.org dist index (`lts:false`, latest Current), resolved in `internal/fetcher` like the other tools
-- Tool versions (kubectl/helm/helmfile/helm-diff/node/alpine): latest stable resolved at generation time from dl.k8s.io (kubectl), GitHub API (helm, helmfile, helm-diff), the nodejs.org dist index (node) and the dl-cdn.alpinelinux.org directory index (alpine), no pinning
+- Node.js is delivered multi-stage from `docker.io/library/node:<version>-alpine` (musl binary); the final stage runs `apk add --no-cache libstdc++`. Ships node+npm+npx only — no corepack (dropped from the Node.js ≥ 25 distribution)
+- Node version = semver-max of exact `<X.Y.Z>-alpine` tags from the Docker Hub tag API (`hub.docker.com/v2/repositories/library/node/tags/`) that have both `linux/amd64` and `linux/arm64` images, resolved in `internal/fetcher` like the other tools. Not the nodejs.org dist index: docker-node images lag nodejs.org releases by ~1.5–2 days (arm64 is built from source), which would break the daily 03:00 UTC cron; resolving from Docker Hub guarantees the pinned tag exists multi-arch at build time
+- Tool versions (kubectl/helm/helmfile/helm-diff/node/alpine): latest stable resolved at generation time from dl.k8s.io (kubectl), GitHub API (helm, helmfile, helm-diff), the Docker Hub tag API (node) and the dl-cdn.alpinelinux.org directory index (alpine), no pinning
 - Dockerfile template at `assets/Dockerfile.template`, embedded via the `assets` package (`assets/assets.go`) and rendered by `cmd/image` into the gitignored root `Dockerfile`
 - Build & publish: `.github/workflows/docker.yml` builds the multi-arch image (daily 03:00 UTC + manual) and pushes it to GHCR as `latest` + the bundled helmfile version tag
 
