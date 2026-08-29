@@ -13,9 +13,7 @@ func testVersions() internal.Versions {
 	return internal.Versions{
 		Alpine:   "3.24",
 		Kubectl:  "1.36.4",
-		Helm:     "3.21.4",
 		Helmfile: "1.7.4",
-		HelmDiff: "3.15.11",
 		Node:     "26.8.1",
 	}
 }
@@ -31,17 +29,12 @@ func TestRender(t *testing.T) {
 	for _, want := range []string{
 		"FROM alpine:3.24 AS builder",
 		"KUBECTL_VERSION=1.36.4",
-		"HELM_VERSION=3.21.4",
-		"HELMFILE_VERSION=1.7.4",
-		"HELMDIFF_VERSION=3.15.11",
-		"helm-v${HELM_VERSION}-linux-${TARGETARCH}.tar.gz",
-		"helmfile_${HELMFILE_VERSION}_linux_${TARGETARCH}.tar.gz",
-		"helm-diff-linux-${TARGETARCH}.tgz",
+		"ARG HELMFILE_VERSION=1.7.4",
+		"ghcr.io/helmfile/helmfile:v${HELMFILE_VERSION}",
 		"ARG NODE_VERSION=26.8.1",
 		"node:${NODE_VERSION}-alpine",
 		"COPY --from=node",
 		"apk add --no-cache libstdc++",
-		"HELM_DATA_HOME",
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("output missing %q", want)

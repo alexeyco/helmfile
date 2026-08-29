@@ -17,9 +17,7 @@ import (
 
 const (
 	kubectlURL  = "https://dl.k8s.io/release/stable.txt"
-	helmURL     = "https://api.github.com/repos/helm/helm/releases/latest"
 	helmfileURL = "https://api.github.com/repos/helmfile/helmfile/releases/latest"
-	helmDiffURL = "https://api.github.com/repos/databus23/helm-diff/releases/latest"
 	alpineURL   = "https://dl-cdn.alpinelinux.org/alpine/"
 	nodeURL     = "https://hub.docker.com/v2/repositories/library/node/tags/?page_size=100"
 
@@ -56,9 +54,7 @@ type source struct {
 func (f *Fetcher) Fetch(ctx context.Context) (internal.Versions, error) {
 	sources := []source{
 		{name: "kubectl", url: kubectlURL, parse: parsePlainVersion},
-		{name: "helm", url: helmURL, header: githubHeader, parse: parseTagName},
 		{name: "helmfile", url: helmfileURL, header: githubHeader, parse: parseTagName},
-		{name: "helm-diff", url: helmDiffURL, header: githubHeader, parse: parseTagName},
 		{name: "alpine", url: alpineURL, parse: parseAlpineIndex},
 		{name: "node", url: nodeURL, parse: parseNodeTags},
 	}
@@ -86,11 +82,9 @@ func (f *Fetcher) Fetch(ctx context.Context) (internal.Versions, error) {
 
 	return internal.Versions{
 		Kubectl:  results[0],
-		Helm:     results[1],
-		Helmfile: results[2],
-		HelmDiff: results[3],
-		Alpine:   results[4],
-		Node:     results[5],
+		Helmfile: results[1],
+		Alpine:   results[2],
+		Node:     results[3],
 	}, nil
 }
 

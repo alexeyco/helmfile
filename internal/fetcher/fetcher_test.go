@@ -28,15 +28,13 @@ const alpineIndexBody = `<html>
 func TestFetcherFetch(t *testing.T) {
 	responses := map[string]string{
 		"https://dl.k8s.io/release/stable.txt":                                    "v1.36.4\n",
-		"https://api.github.com/repos/helm/helm/releases/latest":                  `{"tag_name": "v3.21.4"}`,
 		"https://api.github.com/repos/helmfile/helmfile/releases/latest":          `{"tag_name": "v1.7.4"}`,
-		"https://api.github.com/repos/databus23/helm-diff/releases/latest":        `{"tag_name": "v3.15.11"}`,
 		"https://dl-cdn.alpinelinux.org/alpine/":                                  alpineIndexBody,
 		"https://hub.docker.com/v2/repositories/library/node/tags/?page_size=100": `{"results":[{"name":"26.8.1-alpine","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]}]}`,
 	}
 	ctrl := gomock.NewController(t)
 	client := NewMockHTTPClient(ctrl)
-	client.EXPECT().Do(gomock.Any()).Times(6).DoAndReturn(
+	client.EXPECT().Do(gomock.Any()).Times(4).DoAndReturn(
 		func(req *http.Request) (*http.Response, error) {
 			body, ok := responses[req.URL.String()]
 			if !ok {
@@ -58,9 +56,7 @@ func TestFetcherFetch(t *testing.T) {
 	want := internal.Versions{
 		Alpine:   "3.24",
 		Kubectl:  "1.36.4",
-		Helm:     "3.21.4",
 		Helmfile: "1.7.4",
-		HelmDiff: "3.15.11",
 		Node:     "26.8.1",
 	}
 	if got != want {
@@ -71,7 +67,7 @@ func TestFetcherFetch(t *testing.T) {
 func TestFetcherFetchHTTPError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	client := NewMockHTTPClient(ctrl)
-	client.EXPECT().Do(gomock.Any()).Times(6).Return(nil, errors.New("boom"))
+	client.EXPECT().Do(gomock.Any()).Times(4).Return(nil, errors.New("boom"))
 
 	if _, err := fetcher.New(client).Fetch(context.Background()); err == nil {
 		t.Fatal("expected error")
