@@ -39,7 +39,7 @@ COPY --from=builder /out/helmfile /usr/local/bin/helmfile
 
 COPY --from=builder /out/plugins/helm-diff /usr/local/share/helm/plugins/helm-diff
 
-COPY --from=node /usr/local/bin/node /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/
+COPY --from=node /usr/local/bin/node /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 
 ENV HELM_DATA_HOME=/usr/local/share/helm

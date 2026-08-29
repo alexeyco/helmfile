@@ -8,7 +8,7 @@ Bundled tools:
 - helm
 - helmfile
 - helm diff
-- node (npm, npx, corepack included)
+- node (npm, npx included)
 
 ## Image
 

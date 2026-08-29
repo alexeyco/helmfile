@@ -74,26 +74,30 @@ func TestParseTagName(t *testing.T) {
 	}
 }
 
-func TestParseNodeIndex(t *testing.T) {
+func TestParseNodeTags(t *testing.T) {
 	tests := []struct {
 		name    string
 		body    string
 		want    string
 		wantErr bool
 	}{
-		{"with v prefix and lts false", `[{"version":"v26.8.1","lts":false}]`, "26.8.1", false},
-		{"skips lts entry and takes current line", `[{"version":"v24.20.0","lts":"Krypton"},{"version":"v26.8.1","lts":false}]`, "26.8.1", false},
-		{"all entries lts", `[{"version":"v24.20.0","lts":"Krypton"}]`, "", true},
-		{"without prefix", `[{"version":"26.8.1","lts":false}]`, "26.8.1", false},
-		{"empty array", `[]`, "", true},
-		{"invalid JSON", `[{"version": `, "", true},
+		{"happy path", `{"results":[{"name":"26.8.1-alpine","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]}]}`, "26.8.1", false},
+		{"semver max beats list order", `{"results":[{"name":"24.20.0-alpine","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]},{"name":"26.8.1-alpine","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]}]}`, "26.8.1", false},
+		{"numeric minor compare", `{"results":[{"name":"26.9.3-alpine","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]},{"name":"26.10.0-alpine","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]}]}`, "26.10.0", false},
+		{"skips non plain alpine tags", `{"results":[{"name":"26.8.1-alpine3.24","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]},{"name":"26.8.1-bookworm","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]},{"name":"26.8.1-slim","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]},{"name":"26.8.1","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]},{"name":"latest-alpine","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]},{"name":"27.0.0-rc.1-alpine","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]},{"name":"26.8.1-alpine","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]}]}`, "26.8.1", false},
+		{"ignores non linux and unknown images", `{"results":[{"name":"26.8.1-alpine","images":[{"os":"windows","architecture":"amd64"},{"architecture":"arm64"},{"os":"linux","architecture":"riscv64"},{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]}]}`, "26.8.1", false},
+		{"skips amd64 only tag", `{"results":[{"name":"26.8.1-alpine","images":[{"os":"linux","architecture":"amd64"}]},{"name":"26.8.0-alpine","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]}]}`, "26.8.0", false},
+		{"amd64 only candidate", `{"results":[{"name":"26.8.1-alpine","images":[{"os":"linux","architecture":"amd64"}]}]}`, "", true},
+		{"null images", `{"results":[{"name":"26.8.1-alpine","images":null}]}`, "", true},
+		{"no qualifying tags", `{"results":[{"name":"26.8.1-alpine3.24","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]},{"name":"26.8.1-bookworm","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]},{"name":"26.8.1-slim","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]},{"name":"26.8.1","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]},{"name":"latest-alpine","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]},{"name":"27.0.0-rc.1-alpine","images":[{"os":"linux","architecture":"amd64"},{"os":"linux","architecture":"arm64"}]}]}`, "", true},
+		{"empty results", `{"results":[]}`, "", true},
+		{"invalid JSON", `{"results": `, "", true},
 		{"empty body", "", "", true},
-		{"empty version", `[{"version":"","lts":false}]`, "", true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseNodeIndex([]byte(tt.body))
+			got, err := parseNodeTags([]byte(tt.body))
 			if tt.wantErr {
 				if err == nil {
 					t.Fatalf("expected error, got %q", got)
