@@ -56,3 +56,6 @@ jobs:
 
       - name: Smoke test image
         run: docker run --rm "${IMAGE}:latest" sh -c 'helmfile version && helm version && helm diff version && kubectl version --client && node --version && npm --version'
+
+      - name: Clean up untagged image versions
+        uses: dataaxiom/ghcr-cleanup-action@v1

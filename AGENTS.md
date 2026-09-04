@@ -23,7 +23,7 @@ Docker image for Kubernetes deploys in CI/CD — see `README.md`.
 - Tool versions (kubectl/helmfile/node/alpine): latest stable resolved at generation time from dl.k8s.io (kubectl), the GitHub API (helmfile → base image tag), the Docker Hub tag API (node) and the dl-cdn.alpinelinux.org directory index (alpine, builder stage), no pinning
 - Builder stage (alpine) only downloads kubectl
 - Dockerfile template at `assets/Dockerfile.template`, embedded via the `assets` package (`assets/assets.go`) and rendered by `cmd/image` into the gitignored root `Dockerfile`
-- Build & publish: `.github/workflows/docker.yml` builds the multi-arch image (daily 03:00 UTC + manual), pushes it to GHCR as `latest` + the bundled helmfile version tag, then smoke-tests the pushed `:latest` (`helmfile version && helm version && helm diff version && kubectl version --client && node --version && npm --version`)
+- Build & publish: `.github/workflows/docker.yml` builds the multi-arch image (daily 03:00 UTC + manual), pushes it to GHCR as `latest` + the bundled helmfile version tag, then smoke-tests the pushed `:latest` (`helmfile version && helm version && helm diff version && kubectl version --client && node --version && npm --version`), then deletes untagged GHCR image versions (`dataaxiom/ghcr-cleanup-action`)
 
 ## Commands
 
@@ -54,5 +54,6 @@ CI extracts the helmfile version tag from it); `make generate` target.
 `.github/workflows/docker.yml` (daily 03:00 UTC + manual) builds the
 multi-arch image, pushes it to GHCR as `latest` + helmfile version tag, then
 smoke-tests the pushed `:latest` (`helmfile version && helm version &&
-helm diff version && kubectl version --client && node --version`).
+helm diff version && kubectl version --client && node --version`) and
+deletes untagged GHCR image versions.
 Generated root `Dockerfile` is gitignored.
