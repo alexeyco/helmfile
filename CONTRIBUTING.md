@@ -31,5 +31,6 @@ Notes:
 Nothing to do manually. The `docker` workflow
 ([`.github/workflows/docker.yml`](.github/workflows/docker.yml)) builds the
 multi-arch image and pushes it to GHCR daily at 03:00 UTC, or on demand via
-`workflow_dispatch`. There are no releases, tags or changelog — image tags
+`workflow_dispatch`. Untagged image versions are cleaned up automatically.
+There are no releases, tags or changelog — image tags
 (`latest` + the bundled helmfile version) are derived at build time.

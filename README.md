@@ -16,7 +16,8 @@ Published to GHCR as `ghcr.io/alexeyco/helmfile`:
 - Multi-arch: `linux/amd64` and `linux/arm64`
 - Alpine-based via the official helmfile base image (shell available, so
   scripts work)
-- Rebuilt daily at 03:00 UTC via CI (also manually triggerable)
+- Rebuilt daily at 03:00 UTC via CI (also manually triggerable); untagged
+  versions are cleaned up automatically
 
 ## Development
 
